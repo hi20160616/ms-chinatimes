@@ -72,6 +72,7 @@ func getLinks(rawurl string) ([]string, error) {
 		links = kickOutLinksMatchPath(links, "-260809") // 网推
 		links = kickOutLinksMatchPath(links, "-260418") // 健康
 		links = kickOutLinksMatchPath(links, "-260423") // 运势
+		links = kickOutLinksMatchPath(links, "-260405") // 生活
 		return gears.StrSliceDeDupl(links), nil
 	}
 }
