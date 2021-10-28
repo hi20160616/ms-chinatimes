@@ -66,7 +66,12 @@ func getLinks(rawurl string) ([]string, error) {
 		return nil, errors.WithMessagef(err, "[%s] cannot extract links from %s",
 			configs.Data.MS["chinatimes"].Title, rawurl)
 	} else {
-		links = linksFilter(links, `https://tw.chinatimes.com/\w+/\d+/.*`)
+		links = linksFilter(links, `https://www\.chinatimes\.com/realtimenews/\d+-\d+`)
+		links = kickOutLinksMatchPath(links, "-260404") // 娱乐
+		links = kickOutLinksMatchPath(links, "-260403") // 体育
+		links = kickOutLinksMatchPath(links, "-260809") // 网推
+		links = kickOutLinksMatchPath(links, "-260418") // 健康
+		links = kickOutLinksMatchPath(links, "-260423") // 运势
 		return gears.StrSliceDeDupl(links), nil
 	}
 }

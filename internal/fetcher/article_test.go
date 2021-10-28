@@ -14,8 +14,8 @@ func TestFetchTitle(t *testing.T) {
 		url   string
 		title string
 	}{
-		{"https://tw.chinatimes.com/local/20211015/EJNCNTZMQVE5TE2PHRHB5MN3HY/", "K律師論點｜城中城大火若是人禍　究責關鍵先釐清這事"},
-		{"https://tw.chinatimes.com/politics/20211012/GTRJUAUOXBAUXIIQZEAR72XHSI/", "網傳綠營大老舔共文　讚「兩岸只有親情和恩情」？當事人說話了"},
+		{"https://www.chinatimes.com/realtimenews/20211026002298-260407", "每年3千人死於交通事故 陳椒華批：公部門長期怠惰"},
+		{"https://www.chinatimes.com/realtimenews/20211028000698-260408", "美參謀首長憂陸極音速飛彈 白宮同表關切圈 - 中央社"},
 	}
 	for _, tc := range tests {
 		a := NewArticle()
@@ -50,8 +50,8 @@ func TestFetchUpdateTime(t *testing.T) {
 		url  string
 		want string
 	}{
-		{"https://tw.chinatimes.com/local/20211015/EJNCNTZMQVE5TE2PHRHB5MN3HY/", "2021-10-15 16:13:47.476 +0800 UTC"},
-		{"https://tw.chinatimes.com/politics/20211012/GTRJUAUOXBAUXIIQZEAR72XHSI/", "2021-10-12 20:36:20.657 +0800 UTC"},
+		{"https://www.chinatimes.com/realtimenews/20211026002298-260407", "2021-10-26 12:37:28 +0800 UTC"},
+		{"https://www.chinatimes.com/realtimenews/20211028000698-260408", "2021-10-28 10:27:22 +0800 UTC"},
 	}
 	var err error
 	for _, tc := range tests {
@@ -84,10 +84,8 @@ func TestFetchContent(t *testing.T) {
 		url  string
 		want string
 	}{
-		{"https://tw.chinatimes.com/property/20211021/2ICEHGCCWRFNXOLYWGGHGEIJDA/", "K律師論點｜城中城大火若是人禍　究責關鍵先釐清這事"},
-		{"https://tw.chinatimes.com/local/20211015/EJNCNTZMQVE5TE2PHRHB5MN3HY/", "K律師論點｜城中城大火若是人禍　究責關鍵先釐清這事"},
-		{"https://tw.chinatimes.com/politics/20211012/GTRJUAUOXBAUXIIQZEAR72XHSI/", "網傳綠營大老舔共文　讚「兩岸只有親情和恩情」？當事人說話了"},
-		{"https://tw.chinatimes.com/property/20211025/SARWV3SGOZALZJVUMBLTSM6EYI/", ""},
+		{"https://www.chinatimes.com/realtimenews/20211026002298-260407", "每年3千人死於交通事故 陳椒華批：公部門長期怠惰"},
+		{"https://www.chinatimes.com/realtimenews/20211028000698-260408", "美參謀首長憂陸極音速飛彈 白宮同表關切圈 - 中央社"},
 	}
 	var err error
 
@@ -115,9 +113,8 @@ func TestFetchArticle(t *testing.T) {
 		url string
 		err error
 	}{
-		{"https://tw.chinatimes.com/local/20211015/EJNCNTZMQVE5TE2PHRHB5MN3HY/", ErrTimeOverDays},
-		{"https://tw.chinatimes.com/property/20211021/2ICEHGCCWRFNXOLYWGGHGEIJDA/", ErrTimeOverDays},
-		{"https://tw.chinatimes.com/property/20211025/SARWV3SGOZALZJVUMBLTSM6EYI/", nil},
+		{"https://www.chinatimes.com/realtimenews/20211026002298-260407", ErrTimeOverDays},
+		{"https://www.chinatimes.com/realtimenews/20211028000698-260408", nil},
 	}
 	for _, tc := range tests {
 		a := NewArticle()

@@ -1,10 +1,11 @@
 package fetcher
 
 import (
+	"bytes"
 	"context"
 	"crypto/md5"
-	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/url"
 	"regexp"
@@ -35,6 +36,7 @@ type Article struct {
 }
 
 var ErrTimeOverDays error = errors.New("article update time out of range")
+var ErrIgnoreCate error = errors.New("article is ignored by category")
 
 func NewArticle() *Article {
 	return &Article{
@@ -195,7 +197,16 @@ func (a *Article) fetchTitle() (string, error) {
 			configs.Data.MS["chinatimes"].Title)
 	}
 	title := n[0].FirstChild.Data
-	rp := strings.NewReplacer(" ｜ 蘋果新聞網 ｜ 蘋果日報", "")
+	// ignores := []string{" - 綜合星聞", "| 職場觀測", "| 流行消費", "股市",
+	//         "娛樂", "旅遊", "運動", "文教", "數位", " | 聯合晚點評 | 聯合報",
+	//         "| 情慾犯罪", "| 動物星球", "| 星座運勢", "| 紓困振興五倍券",
+	//         "| 稅務法務", "| 地方"}
+	// for _, v := range ignores {
+	//         if strings.Contains(title, v) {
+	//                 return "ignore", ErrIgnoreCate
+	//         }
+	// }
+	rp := strings.NewReplacer(" - 中時新聞網", "", " - 中時", "")
 	title = strings.TrimSpace(rp.Replace(title))
 	return gears.ChangeIllegalChar(title), nil
 }
@@ -241,44 +252,34 @@ func (a *Article) fetchContent() (string, error) {
 		return "", errors.Errorf("[%s] fetchContent: doc is nil: %s", configs.Data.MS["chinatimes"].Title, a.U.String())
 	}
 	body := ""
-	bodyN := exhtml.ElementsByTagAndId(a.doc, "script", "fusion-metadata")
+	bodyN := exhtml.ElementsByTagAndClass(a.doc, "div", "article-body")
 	if len(bodyN) == 0 {
 		return body, errors.Errorf("no article content matched: %s", a.U.String())
 	}
 	// Fetch content
-	bodyJs := func() string {
-		for _, v := range bodyN {
-			if v.FirstChild != nil && v.FirstChild.Type == html.TextNode {
-				return v.FirstChild.Data
+	for _, n := range bodyN {
+		exhtml.ElementsRmByTag(n, "div")
+		ps := exhtml.ElementsByTag(n, "p")
+		var buf bytes.Buffer
+		w := io.Writer(&buf)
+		for _, p := range ps {
+			if err := html.Render(w, p); err != nil {
+				return "", errors.WithMessagef(err, "[%s] fetchContent: Render error: %s",
+					configs.Data.MS["chinatimes"].Title, a.U.String())
 			}
+			repl := strings.NewReplacer("<p>", "", "</p>", "", "「", "“", "」", "”")
+			x := repl.Replace(buf.String())
+			re := regexp.MustCompile(`(?m)<b.*?>(?P<x>.*?)</b>`)
+			x = re.ReplaceAllString(x, "**${x}**")
+			re = regexp.MustCompile(`(?m)<strong>(?P<x>.*?)</strong>`)
+			x = re.ReplaceAllString(x, "**${x}**")
+			re = regexp.MustCompile(`(?m)<a href="(?P<href>.*?)".*?>(?P<x>.*?)</a>`)
+			x = re.ReplaceAllString(x, "[${x}](${href})")
+			if strings.TrimSpace(x) != "" {
+				body += x + "  \n"
+			}
+			buf.Reset()
 		}
-		return ""
-	}()
-
-	re := regexp.MustCompile(`(?m)Fusion\.globalContent=(?P<x>.*?);Fusion.globalContentConfig={"source":"`)
-	if !re.MatchString(bodyJs) {
-		return "", fmt.Errorf("nil content matched: %s", a.U.String())
-	}
-	rs := re.FindStringSubmatch(bodyJs)
-	c := struct {
-		Content_elements []struct {
-			Content string `json:"content"`
-		} `json:"content_elements"`
-	}{}
-	if err := json.Unmarshal([]byte(rs[1]), &c); err != nil {
-		return "", err
-	}
-
-	for _, v := range c.Content_elements {
-		re := regexp.MustCompile(`(?m)<mark .*?>(?P<x>.*?)</mark>`)
-		x := re.ReplaceAllString(v.Content, "${x}")
-		re = regexp.MustCompile(`(?m)<b>(?P<x>.*?)</b>`)
-		x = re.ReplaceAllString(x, "**${x}**")
-		re = regexp.MustCompile(`(?m)<a href="(?P<href>.*?)">(?P<x>.*?)</a>`)
-		x = re.ReplaceAllString(x, "[${x}](${href})")
-		x = strings.ReplaceAll(x, "「", "“")
-		x = strings.ReplaceAll(x, "」", "”")
-		body += x + "  \n"
 	}
 	return body, nil
 }
